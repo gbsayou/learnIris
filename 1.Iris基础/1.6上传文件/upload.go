@@ -1,0 +1,30 @@
+package main
+
+import (
+	"github.com/kataras/iris"
+
+	"mime/multipart"
+	"strings"
+)
+
+const maxSize = 5 << 20 // 定义请求的最大占用空间为 5MB
+
+func main() {
+	app := iris.Default()
+	// 定义一个路由
+	// 使用中间件，限制请求的大小
+	app.Post("/upload", iris.LimitRequestBodySize(maxSize), func(ctx iris.Context) {
+		ctx.UploadFormFiles("./uploads", beforeSave) //该方法会将接收到的文件保存在 uploads 目录下，保存之前会执行 before Save方法
+	})
+
+	app.Run(iris.Addr(":8080"))
+}
+
+// 该方法在保存文件之前执行，效果是根据给文件名加上 IP 地址前缀
+func beforeSave(ctx iris.Context, file *multipart.FileHeader) {
+	ip := ctx.RemoteAddr()
+	ip = strings.Replace(ip, ".", "_", -1)
+	ip = strings.Replace(ip, ":", "_", -1)
+
+	file.Filename = ip + "-" + file.Filename
+}
