@@ -53,4 +53,20 @@ db.Where("id = ?", 1).Delete(User{})
 
 针对删除，如果表中定义了 DeletedAt 字段，则删除的时候，是执行软删除。
 
+## 3.使用事务
 
+先利用 gorm 开始一个事务，然后在这个事务中执行具体的操作。当发生错误时，回滚事务；当操作进行顺利，则需要提交事务。
+
+```Go
+func UserRegister(ctx iris.Context){
+    trx := db.Begin()//开始并获取一个事务
+    name := ctx.Params().Get("name")//从请求中获取name
+    //使用当前事务执行数据库操作
+    if err:= trx.Create(&User{Name:name}).Error;err!=nil{
+        trx.Rollback()
+        panic("用户注册失败")
+    }
+    trx.Commit()
+    ctx.JSON("用户注册成功")
+}
+```
